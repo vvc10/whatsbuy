@@ -64,7 +64,7 @@ export default function FeatureShowcase() {
           </div>
           <h3 className="text-lg font-bold">{feature.title}</h3>
           {feature.badge && (
-          <Badge className="w-fit bg-green-900">{feature.badge}</Badge>
+          <Badge className="w-fit bg-green-900/80 hover:bg-green-900/70">{feature.badge}</Badge>
           )}
           <p className="text-sm text-gray-500">{feature.description}</p>
         </div>
