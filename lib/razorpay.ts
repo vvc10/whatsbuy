@@ -1,10 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 
 const supabase = createClient();
-
-console.log("RAZORPAY_KEY:", process.env.NEXT_PUBLIC_RAZORPAY_KEY);
-console.log("RAZORPAY_SECRET:", process.env.RAZORPAY_SECRET ? "[HIDDEN]" : "[NOT SET]");
-
+ 
 export interface RazorpayOptions {
   key: string
   amount: number

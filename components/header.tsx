@@ -60,7 +60,6 @@ export default function Header() {
           <span className="font-bold text-lg">WhatsBuy.in</span>
         </Link>
 
-
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-1">
           <NavigationMenu>
