@@ -5,7 +5,7 @@ const PrivacyPolicy = () => {
   return (
     <div>
       <Header />
-      <main className="max-w-3xl mx-auto px-4 py-10 text-gray-800">
+      <main className="max-w-3xl mx-auto px-4 py-10">
         <h1 className="text-3xl font-bold mb-6">Privacy Policy</h1>
 
         <p className="mb-4">
@@ -19,7 +19,7 @@ const PrivacyPolicy = () => {
           <li>You can request deletion or correction of your data by contacting us at <a href="mailto:whatsbuy.help@gmail.com" className="text-blue-600">whatsbuy.help@gmail.com</a>.</li>
         </ul>
 
-        <p className="text-sm text-gray-600">
+        <p className="text-sm">
           By using WhatsBuy.in, you consent to our privacy practices.
         </p>
       </main>

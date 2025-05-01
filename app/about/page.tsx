@@ -5,7 +5,7 @@ const About = () => {
   return (
     <div>
       <Header />
-      <main className="max-w-3xl mx-auto space-y-5 mt-12 px-4 py-12 text-gray-800">
+      <main className="max-w-3xl mx-auto space-y-5 mt-12 px-4 py-12">
         <h1 className="text-3xl font-bold mb-6">About WhatsBuy.in</h1>
 
         <p className="mb-4">
@@ -24,7 +24,7 @@ const About = () => {
           We believe in decentralizing online retail and giving power to every individual creator. No coding. No upfront cost. Just your idea — turned into reality.
         </p>
 
-        <p className="text-sm text-gray-600 mt-6">
+        <p className="text-sm mt-6">
           Got feedback or ideas? Reach out to us at <a href="mailto:whatsbuy.help@gmail.com" className="text-blue-600">whatsbuy.help@gmail.com</a>. Let’s build the future of online commerce together.
         </p>
       </main>

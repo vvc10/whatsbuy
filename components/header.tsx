@@ -45,21 +45,20 @@ export default function Header() {
   }, [isMenuOpen])
 
   return (
-    <header 
+    <header
       className={cn(
         "fixed top-0 w-full z-50 transition-all duration-300",
-        isScrolled 
-          ? "bg-background/95 backdrop-blur-sm border-b shadow-sm" 
+        isScrolled
+          ? "bg-background/95 backdrop-blur-sm border-b shadow-sm"
           : "bg-transparent"
       )}
     >
       <div className="container mx-auto px-4 md:px-6 py-3 flex items-center justify-between">
-        <Link href="/" className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded-md bg-emerald-600 flex items-center justify-center">
-            <span className="text-white font-bold">W</span>
-          </div>
+        <Link href="/" className={`flex items-center gap-1 font-semibold`}>
+          <Image className="h-8 w-8 md:hidden" src={icon} alt="WhatsBuy Logo" />
           <span className="font-bold text-lg">WhatsBuy.in</span>
         </Link>
+
 
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center space-x-1">
@@ -131,9 +130,9 @@ export default function Header() {
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
-          
+
           <ThemeToggle />
-          
+
           <div className="ml-4 flex items-center space-x-2">
             <Link href="/login">
               <Button variant="ghost" size="sm">Log in</Button>
@@ -147,10 +146,10 @@ export default function Header() {
         {/* Mobile menu button */}
         <div className="flex md:hidden items-center space-x-2">
           <ThemeToggle />
-          <Button 
+          <Button
             id="menu-toggle"
-            variant="ghost" 
-            size="icon" 
+            variant="ghost"
+            size="icon"
             aria-label="Menu"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
@@ -169,9 +168,9 @@ export default function Header() {
       >
         <div className="p-6 flex-1 overflow-y-auto">
           <div className="flex justify-end mb-6">
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               aria-label="Close Menu"
               onClick={() => setIsMenuOpen(false)}
             >
@@ -179,8 +178,8 @@ export default function Header() {
             </Button>
           </div>
           <nav className="flex flex-col space-y-6">
-            <Link 
-              href="/#features" 
+            <Link
+              href="/#features"
               className="text-lg font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
@@ -195,8 +194,8 @@ export default function Header() {
                   { title: "Food & Restaurants", href: "/solutions/restaurants" },
                   { title: "Service Providers", href: "/solutions/services" },
                 ].map((item) => (
-                  <Link 
-                    key={item.title} 
+                  <Link
+                    key={item.title}
                     href={item.href}
                     className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                     onClick={() => setIsMenuOpen(false)}
@@ -206,15 +205,15 @@ export default function Header() {
                 ))}
               </div>
             </div>
-            <Link 
-              href="/pricing" 
+            <Link
+              href="/pricing"
               className="text-lg font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
               Pricing
             </Link>
-            <Link 
-              href="/#testimonials" 
+            <Link
+              href="/#testimonials"
               className="text-lg font-medium"
               onClick={() => setIsMenuOpen(false)}
             >

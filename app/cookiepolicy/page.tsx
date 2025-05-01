@@ -5,7 +5,7 @@ const CookiePolicy = () => {
   return (
     <div>
       <Header />
-      <main className="max-w-3xl mx-auto px-4 py-10 text-gray-800">
+      <main className="max-w-3xl mx-auto px-4 py-10">
         <h1 className="text-3xl font-bold mb-6">Cookie Policy</h1>
 
         <p className="mb-4">
@@ -18,7 +18,7 @@ const CookiePolicy = () => {
           <li>Offer a smoother and more personalized experience</li>
         </ul>
 
-        <p className="text-sm text-gray-600">
+        <p className="text-sm">
           You can manage or disable cookies via your browser settings.
         </p>
       </main>
