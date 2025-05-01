@@ -16,6 +16,7 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu"
 import { cn } from "@/lib/utils"
+import icon from "@/app/assets/icons/icon.png"
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
