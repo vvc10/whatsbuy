@@ -4,7 +4,11 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2 } from "lucide-react"
-import { loadRazorpay, createRazorpayOrder, initializeRazorpayCheckout } from "@/lib/razorpay"
+import { loadRazorpay, initializeRazorpayCheckout } from "@/lib/razorpay"
+import LoginForm from "@/components/auth/login-form"
+import RegisterForm from "@/components/auth/register-form"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 interface RazorpayButtonProps {
   amount: number
@@ -22,9 +26,16 @@ export default function RazorpayButton({
   className,
 }: RazorpayButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(false) // Replace with actual auth logic
   const { toast } = useToast()
 
   const handlePayment = async () => {
+    if (!isAuthenticated) {
+      setIsModalOpen(true)
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -34,8 +45,20 @@ export default function RazorpayButton({
         throw new Error("Razorpay SDK failed to load")
       }
 
-      // Create order
-      const { order } = await createRazorpayOrder(amount)
+      // Call the upgrade-plan API
+      const response = await fetch("/api/payments/upgrade-plan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ planId: "starter", amount }), // Replace "starter" with the actual plan ID dynamically
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to upgrade plan")
+      }
+
+      const { order } = await response.json()
 
       // Initialize Razorpay checkout
       const options = {
@@ -43,7 +66,7 @@ export default function RazorpayButton({
         amount: amount * 100, // Razorpay expects amount in paise
         currency: "INR",
         name: "WhatsBuy.in",
-        description: "Payment for your order",
+        description: "Upgrade Plan Payment",
         order_id: order.id,
         handler: (response: any) => {
           // Handle successful payment
@@ -84,9 +107,31 @@ export default function RazorpayButton({
   }
 
   return (
-    <Button onClick={handlePayment} disabled={isLoading} className={`bg-emerald-600 hover:bg-emerald-700 ${className}`}>
-      {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-      {buttonText}
-    </Button>
+    <>
+      <Button onClick={handlePayment} disabled={isLoading} className={`bg-emerald-600 hover:bg-emerald-700 ${className}`}>
+        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+        {buttonText}
+      </Button>
+
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Login or Register</DialogTitle>
+          </DialogHeader>
+          <Tabs defaultValue="login" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="login">Login</TabsTrigger>
+              <TabsTrigger value="register">Register</TabsTrigger>
+            </TabsList>
+            <TabsContent value="login">
+              <LoginForm />
+            </TabsContent>
+            <TabsContent value="register">
+              <RegisterForm />
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

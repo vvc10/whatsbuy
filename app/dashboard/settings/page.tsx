@@ -13,8 +13,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, Upload, Check } from "lucide-react"
+import { Loader2, Upload, Check, AlertCircle } from "lucide-react"
 import Image from "next/image"
+import { SubscriptionPlan } from "@/types/suscriptionlimits"
 
 const CATEGORIES = [
   { id: "clothing", name: "Clothing & Apparel" },
@@ -36,6 +37,7 @@ export default function SettingsPage() {
   const [uploadingBanner, setUploadingBanner] = useState(false)
   const [hasPaymentSettings, setHasPaymentSettings] = useState(false)
   const [hasWhatsappBusiness, setHasWhatsappBusiness] = useState(false)
+  const [subscriptionPlan, setSubscriptionPlan] = useState<SubscriptionPlan>("free")
 
   const [storeData, setStoreData] = useState({
     id: "",
@@ -102,7 +104,35 @@ export default function SettingsPage() {
         setLoading(false)
       }
     }
+    const fetchSubscriptionPlan = async () => {
+      try {
+        setLoading(true)
+        const { data: { user } } = await supabase.auth.getUser()
 
+        if (!user) {
+          setLoading(false)
+          return
+        }
+
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('subscription_plan')
+          .eq('id', user.id)
+          .single()
+
+        if (error) throw error
+
+        if (profile?.subscription_plan) {
+          setSubscriptionPlan(profile.subscription_plan as SubscriptionPlan)
+        }
+      } catch (error) {
+        console.error('Error fetching subscription plan:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchSubscriptionPlan()
     fetchStoreData()
   }, [supabase, router, toast])
 
@@ -263,22 +293,31 @@ export default function SettingsPage() {
           <TabsTrigger value="payments">Payments</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="store" className="space-y-4">
+        <TabsContent value="store" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Store Information</CardTitle>
               <CardDescription>Manage your store details and basic information</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
+
+            <CardContent className="space-y-6">
+              <div className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="name">Store Name</Label>
-                  <Input id="name" name="name" value={storeData.name} onChange={handleChange} required />
+                  <Input
+                    id="name"
+                    name="name"
+                    value={storeData.name}
+                    onChange={handleChange}
+                    placeholder="Your store name"
+                    required
+                  />
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="slug">Store URL</Label>
-                  <div className="flex items-center">
-                    <span className="rounded-l-md border border-r-0 bg-gray-100 px-3 py-2 text-sm text-gray-500">
+                  <div className="flex">
+                    <span className="flex items-center rounded-l-md border border-r-0 bg-muted px-3 text-sm text-muted-foreground">
                       whatsbuy.in/
                     </span>
                     <Input
@@ -287,11 +326,13 @@ export default function SettingsPage() {
                       className="rounded-l-none"
                       value={storeData.slug}
                       onChange={handleChange}
+                      placeholder="your-store"
                       required
                     />
                   </div>
                 </div>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="description">Store Description</Label>
                 <Textarea
@@ -303,6 +344,7 @@ export default function SettingsPage() {
                   placeholder="Describe your store to customers"
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="category">Store Category</Label>
                 <select
@@ -310,7 +352,7 @@ export default function SettingsPage() {
                   name="category"
                   value={storeData.category}
                   onChange={handleChange}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {CATEGORIES.map((category) => (
                     <option key={category.id} value={category.id}>
@@ -319,6 +361,7 @@ export default function SettingsPage() {
                   ))}
                 </select>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
                 <Input
@@ -328,28 +371,34 @@ export default function SettingsPage() {
                   onChange={handleChange}
                   placeholder="e.g., 919876543210 (include country code without +)"
                 />
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Enter your WhatsApp number with country code (e.g., 919876543210 for India)
                 </p>
               </div>
             </CardContent>
-          </Card>
 
-          <div className="flex justify-end">
-            <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700" disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
-          </div>
+            <div className="flex justify-end px-6 pb-6">
+              <Button
+                onClick={handleSave}
+                className="bg-emerald-600 hover:bg-emerald-700"
+                disabled={saving}
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+            </div>
+          </Card>
         </TabsContent>
 
+
         <TabsContent value="whatsapp" className="space-y-4">
-          {hasWhatsappBusiness ? (
+          <div className=""></div>
+          {subscriptionPlan === "pro" ? (
             <>
               <Card>
                 <CardHeader>
@@ -357,7 +406,7 @@ export default function SettingsPage() {
                   <CardDescription>Configure your WhatsApp business settings</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <Label htmlFor="whatsapp_number">WhatsApp Business Number</Label>
                     <Input
                       id="whatsapp_number"
@@ -405,9 +454,13 @@ export default function SettingsPage() {
                       onCheckedChange={(checked) => handleSwitchChange("auto_reply", checked)}
                     />
                     <Label htmlFor="auto_reply">Enable auto-replies</Label>
-                  </div>
+                  </div> */}
+                  <div className="mx-auto space-y-4 bg-green-100 text-green-700 px-4 py-4 rounded-md flex flex-row gap-2">
+                    <AlertCircle />
+                    We're making changes in this feature & will available soon.</div>
+
                 </CardContent>
-                <CardFooter className="flex justify-end">
+                {/* <CardFooter className="flex justify-end">
                   <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700" disabled={saving}>
                     {saving ? (
                       <>
@@ -417,14 +470,14 @@ export default function SettingsPage() {
                       "Save Changes"
                     )}
                   </Button>
-                </CardFooter>
+                </CardFooter> */}
               </Card>
             </>
           ) : (
             <Card>
               <CardHeader>
                 <CardTitle>WhatsApp Business</CardTitle>
-                <CardDescription>Upgrade to access WhatsApp Business features</CardDescription>
+                <CardDescription>Upgrade to pro & get access to WhatsApp Business features</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="rounded-lg border border-dashed p-4">
@@ -432,7 +485,7 @@ export default function SettingsPage() {
                     <div>
                       <h3 className="font-medium">WhatsApp Business API</h3>
                       <p className="text-sm text-gray-500">
-                        Upgrade your plan to setup WhatsApp Business integration for advanced features
+                        Upgrade your plan to pro to setup WhatsApp Business integration for advanced features
                       </p>
                     </div>
                     <Button variant="outline">Upgrade to setup WhatsApp Business</Button>
@@ -444,14 +497,14 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="payments" className="space-y-4">
-          {hasPaymentSettings ? (
+          {subscriptionPlan === "pro" ? (
             <Card>
               <CardHeader>
                 <CardTitle>Payment Methods</CardTitle>
                 <CardDescription>Configure how you receive payments from customers</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2">
+                {/* <div className="flex items-center space-x-2">
                   <Switch id="cod" defaultChecked />
                   <Label htmlFor="cod">Cash on Delivery</Label>
                 </div>
@@ -486,11 +539,15 @@ export default function SettingsPage() {
                       Accept UPI payments directly to your UPI ID (Google Pay, PhonePe, Paytm, etc.)
                     </p>
                   </div>
-                </div>
+                </div> */}
+                <div className="mx-auto space-y-4 bg-green-100 text-green-700 px-4 py-4 rounded-md flex flex-row gap-2">
+                  <AlertCircle />
+                  We're making changes in this feature & will available soon.</div>
+
               </CardContent>
-              <CardFooter className="flex justify-end">
+              {/* <CardFooter className="flex justify-end">
                 <Button className="bg-emerald-600 hover:bg-emerald-700">Save Payment Settings</Button>
-              </CardFooter>
+              </CardFooter> */}
             </Card>
           ) : (
             <Card>

@@ -13,11 +13,15 @@ import { useAuth } from "@/components/auth/auth-provider"
 import { PaintBucket, Upload, Check, ExternalLink, Loader2 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { SubscriptionPlan } from "@/types/suscriptionlimits"
+import Loader from "@/components/dashboard/loading"
+import { PricingModal } from "@/components/modals/PricingModal"
 
 const THEMES = [
   { id: "default", name: "Default" },
-  { id: "modern", name: "Modern" },
-  { id: "classic", name: "Classic" },
+  { id: "food", name: "Food/Organic Food Store" },
+  { id: "fashion", name: "Fashion/Luxury Store" },
+  { id: "tech", name: "Tech/Gadgets Store" },
 ]
 
 const COLORS = [
@@ -52,9 +56,16 @@ export default function AppearancePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [uploadingBanner, setUploadingBanner] = useState(false)
+  const [subscriptionPlan, setSubscriptionPlan] = useState<SubscriptionPlan>("free")
+  const [loading, setLoading] = useState(true)
 
   const supabase = createClient()
-
+  const availableThemes = THEMES.filter(theme => {
+    if (subscriptionPlan === "pro") {
+      return true // Show all themes for Pro users
+    }
+    return theme.id === "default" || theme.id === "food" // Only show default and food for non-Pro
+  })
   const [storeData, setStoreData] = useState({
     id: "",
     slug: "",
@@ -125,8 +136,45 @@ export default function AppearancePage() {
       }
     }
 
+    const fetchSubscriptionPlan = async () => {
+      try {
+        setLoading(true)
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+          setLoading(false)
+          return
+        }
+
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('subscription_plan')
+          .eq('id', user.id)
+          .single()
+
+        if (error) throw error
+
+        if (profile?.subscription_plan) {
+          setSubscriptionPlan(profile.subscription_plan as SubscriptionPlan)
+        }
+      } catch (error) {
+        console.error('Error fetching subscription plan:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchSubscriptionPlan()
     fetchStoreData()
   }, [user, supabase, toast])
+
+  if (loading) {
+    return (
+      <>
+        <Loader />
+      </>
+    )
+  }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "logo" | "banner") => {
     const file = e.target.files?.[0]
@@ -229,6 +277,7 @@ export default function AppearancePage() {
           show_powered_by: storeData.show_powered_by,
           show_social_icons: storeData.show_social_icons,
           show_share_buttons: storeData.show_share_buttons,
+          premium_branding: storeData.premium_branding,
           updated_at: new Date().toISOString(),
         })
         .eq("id", storeData.id)
@@ -283,48 +332,106 @@ export default function AppearancePage() {
           <TabsTrigger value="layout">Layout & Elements</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="themes" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Store Theme</CardTitle>
-              <CardDescription>Choose a theme for your store</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {THEMES.map((theme) => (
-                  <div
-                    key={theme.id}
-                    className={`cursor-pointer overflow-hidden rounded-lg border transition-all hover:shadow-md ${storeData.theme === theme.id ? "border-2 border-emerald-600 ring-2 ring-emerald-600/20" : ""
-                      }`}
-                    onClick={() => handleThemeSelect(theme.id)}
-                  >
-                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
-                      <div
-                        className="h-full w-full"
-                        style={{
-                          backgroundColor: theme.id === "default" ? "#f3f4f6" :
-                            theme.id === "modern" ? "#ffffff" : "#f9fafb"
-                        }}
-                      >
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <span className="text-lg font-medium">{theme.name}</span>
-                        </div>
+
+        
+      <TabsContent value="themes" className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Store Theme</CardTitle>
+            <CardDescription>
+              Choose a theme for your store
+              {subscriptionPlan !== "pro" && (
+                <span className="text-xs text-gray-500 ml-2">
+                  (Upgrade to Pro for premium themes)
+                </span>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {THEMES.map((theme) => (
+                <div
+                  key={theme.id}
+                  className={`relative overflow-hidden rounded-lg border transition-all ${
+                    storeData.theme === theme.id
+                      ? "border-2 border-emerald-600 ring-2 ring-emerald-600/20"
+                      : "border-gray-200"
+                  } ${
+                    (theme.id === "fashion" || theme.id === "tech") && 
+                    subscriptionPlan !== "pro" 
+                      ? "opacity-70" 
+                      : "hover:shadow-md cursor-pointer"
+                  }`}
+                >
+                  {/* Theme Preview */}
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
+                    <div
+                      className="h-full w-full"
+                      style={{
+                        backgroundColor: theme.id === "default" ? "#f3f4f6" :
+                          theme.id === "food" ? "#f9fafb" :
+                          theme.id === "fashion" ? "#faf5ff" : "#eff6ff"
+                      }}
+                    >
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-lg font-medium">{theme.name}</span>
                       </div>
-                      {storeData.theme === theme.id && (
-                        <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-white">
-                          <Check className="h-4 w-4" />
-                        </div>
-                      )}
                     </div>
-                    <div className="p-3">
-                      <h3 className="font-medium">{theme.name}</h3>
-                    </div>
+
+                    {/* Active Theme Checkmark */}
+                    {storeData.theme === theme.id && (
+                      <div className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-white">
+                        <Check className="h-4 w-4" />
+                      </div>
+                    )}
+
+                    {/* Upgrade Overlay for Premium Themes */}
+                    {(theme.id === "fashion" || theme.id === "tech") && 
+                     subscriptionPlan !== "pro" && (
+                      <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col items-center justify-center p-4">
+                        <PricingModal
+                          trigger={
+                            <Button 
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                              size="sm"
+                            >
+                              Upgrade to Pro
+                            </Button>
+                          }
+                        />
+                        <p className="mt-2 text-sm text-white text-center">
+                          This premium theme requires a Pro subscription
+                        </p>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+
+                  {/* Theme Info */}
+                  <div className="p-3">
+                    <h3 className="font-medium flex items-center">
+                      {theme.name}
+                      {(theme.id === "fashion" || theme.id === "tech") && (
+                        <span className="ml-2 text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                          Pro
+                        </span>
+                      )}
+                    </h3>
+                  </div>
+
+                  {/* Clickable Area for Available Themes */}
+                  {(subscriptionPlan === "pro" || theme.id === "default" || theme.id === "food") && (
+                    <button 
+                      className="absolute inset-0 w-full h-full"
+                      onClick={() => handleThemeSelect(theme.id)}
+                      aria-label={`Select ${theme.name} theme`}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
 
         <TabsContent value="colors" className="space-y-4">
           <Card>
@@ -376,8 +483,6 @@ export default function AppearancePage() {
                       </div>
                     )}
                   </div>
-
-
 
                   <div>
                     <Label htmlFor="logo-upload" className="cursor-pointer">
@@ -482,11 +587,9 @@ export default function AppearancePage() {
                       id="show_share_buttons"
                       checked={storeData.show_share_buttons}
                       onCheckedChange={(checked) => handleSwitchChange("show_share_buttons", checked)}
-
                     />
                   </div>
                 </div>
-
               </div>
             </CardContent>
           </Card>
@@ -520,34 +623,33 @@ export default function AppearancePage() {
                   <div className="flex items-center justify-between rounded-md border p-3">
                     <div>
                       <Label htmlFor="show_powered_by">Show "Powered by WhatsBuy.in" badge</Label>
-                      {!storeData.premium_branding && (
-                        <p className="text-xs text-gray-500">Upgrade to premium to customize</p>
+                      {subscriptionPlan !== "pro" && (
+                        <p className="text-xs text-gray-500">Upgrade to Pro to customize</p>
                       )}
                     </div>
                     <Switch
                       id="show_powered_by"
                       checked={storeData.show_powered_by}
                       onCheckedChange={(checked) => handleSwitchChange("show_powered_by", checked)}
-                      disabled={!storeData.premium_branding}
+                      disabled={subscriptionPlan !== "pro"}
                     />
                   </div>
+
                   <div className="flex items-center justify-between rounded-md border p-3">
                     <div>
                       <Label htmlFor="show_social_icons">Show social media icons</Label>
-                      {!storeData.premium_branding && (
-                        <p className="text-xs text-gray-500">Upgrade to premium to customize</p>
+                      {subscriptionPlan !== "pro" && (
+                        <p className="text-xs text-gray-500">Upgrade to Pro to enable</p>
                       )}
                     </div>
                     <Switch
                       id="show_social_icons"
                       checked={storeData.show_social_icons}
                       onCheckedChange={(checked) => handleSwitchChange("show_social_icons", checked)}
-                      disabled={!storeData.premium_branding}
+                      disabled={subscriptionPlan !== "pro"}
                     />
                   </div>
-
                 </div>
-
               </div>
             </CardContent>
           </Card>

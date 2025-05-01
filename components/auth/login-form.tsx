@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
 import { Loader2 } from "lucide-react"
+import { FcGoogle } from "react-icons/fc";
 
 export default function LoginForm() {
   const router = useRouter()
@@ -86,7 +87,7 @@ export default function LoginForm() {
       <div className="grid gap-4">
         <Button variant="outline" onClick={handleGoogleSignIn} disabled={isLoading}>
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-          Continue with Google
+          <FcGoogle /> Continue with Google
         </Button>
       </div>
 

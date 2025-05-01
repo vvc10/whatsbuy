@@ -47,10 +47,10 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     return (
       <div className="flex min-h-screen flex-col bg-gray-50">
         <DashboardHeader  user={session.user} store={store} />
-        <div className="flex flex-1 pt-6">
+        <div className="flex flex-1 md:pt-6">
           <DashboardSidebar store={store} />
-          <main className="flex-1 overflow-auto transition-[padding] duration-300 pt-2 pb-6 px-4 sm:px-6 
-            pl-[7rem] sm:pl-[18rem]"> 
+          <main className="flex-1 overflow-auto transition-[padding] duration-300 pt-2 pb-6 md:px-4 sm:px-6 
+            pl-[0rem] md:pl-[17rem] sm:pl-[18rem]"> 
             {children}
           </main>
         </div>

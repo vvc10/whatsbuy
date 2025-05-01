@@ -11,6 +11,8 @@ import { useState, useRef, useEffect } from "react"
 import { Command, CommandInput, CommandList, CommandItem, CommandGroup, CommandEmpty } from "@/components/ui/command"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import icon from '@/app/assets/icons/icon.png'
+import Image from "next/image"
 
 interface DashboardHeaderProps {
   user: {
@@ -113,8 +115,11 @@ export default function DashboardHeader({ user, store }: DashboardHeaderProps) {
   }, [])
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-4 border-b bg-white px-4 sm:h-16 sm:px-6 pl-[7rem] sm:pl-[18rem]">
-      {/* Search Bar */}
+    <header className="sticky top-0 z-30 flex h-14 items-center justify-between gap-2 md:gap-4 border-b bg-white px-4 sm:h-16 sm:px-6 sm:pl-[18rem]">
+      <Link href="/" className={`flex items-center gap-1 font-semibold`}>
+        <Image className="h-8 w-8 md:hidden" src={icon} alt="WhatsBuy Logo" />
+      </Link>
+
       <div className="relative flex-1 max-w-2xl mx-4" ref={searchRef}>
         <Button
           variant="outline"
@@ -126,9 +131,9 @@ export default function DashboardHeader({ user, store }: DashboardHeaderProps) {
         </Button>
 
         {searchOpen && (
-          <div className="absolute top-10 left-0 w-full shadow-lg rounded-lg border bg-white z-50">
+          <div className="absolute top-10 left-0 md:w-full shadow-lg rounded-lg border bg-white z-50">
             {filteredSuggestions.length > 0 && !searchQuery && (
-              <div className="p-2 border-b">
+              <div className="p-2 border-b w-full">
                 <h3 className="text-xs font-medium text-muted-foreground px-2 py-1">Quick searches</h3>
                 <div className="space-y-1">
                   {filteredSuggestions.map((item) => (
@@ -222,7 +227,7 @@ export default function DashboardHeader({ user, store }: DashboardHeaderProps) {
                   >
                     Mark all as read
                   </Button>
-                  )}
+                )}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <div className="max-h-80 overflow-y-auto">

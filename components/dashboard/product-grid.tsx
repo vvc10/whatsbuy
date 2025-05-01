@@ -124,12 +124,12 @@ export default function ProductGrid({ products }: ProductGridProps) {
   return (
     <>
       <Card>
-        <CardHeader className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
+        <CardHeader className="p-4 flex flex-row">
+          <div className="flex items-center">
+            {/* <div>
               <CardTitle>Your Products</CardTitle>
               <CardDescription>Manage your product catalog</CardDescription>
-            </div>
+            </div> */}
 
           </div>
           <div className="mb-4">
@@ -158,7 +158,7 @@ export default function ProductGrid({ products }: ProductGridProps) {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 p-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4">
               {filteredProducts.map((product) => (
                 <div
                   key={product.id}

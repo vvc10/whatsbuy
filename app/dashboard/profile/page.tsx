@@ -1,55 +1,93 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/components/auth/auth-provider"
-import { Loader2, Upload } from "lucide-react"
+import { Loader2, Upload, Store, ExternalLink } from "lucide-react"
+import Link from "next/link"
 
 export default function ProfilePage() {
   const router = useRouter()
   const { toast } = useToast()
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+  const [storesLoading, setStoresLoading] = useState(false)
   const [profileData, setProfileData] = useState({
     full_name: "",
     email: "",
     phone_number: "",
     avatar_url: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    postal_code: "",
+    bio: ""
   })
+  const [stores, setStores] = useState<any[]>([])
   const supabase = createClient()
 
   useEffect(() => {
-    async function loadProfile() {
+    async function loadData() {
       if (!user) return
 
       try {
-        const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+        // Load profile data
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single()
 
-        if (error) throw error
+        if (profileError) throw profileError
 
-        if (data) {
+        if (profileData) {
           setProfileData({
-            full_name: data.full_name || "",
-            email: data.email || user.email || "",
-            phone_number: data.phone_number || "",
-            avatar_url: data.avatar_url || "",
+            full_name: profileData.full_name || "",
+            email: profileData.email || user.email || "",
+            phone_number: profileData.phone_number || "",
+            avatar_url: profileData.avatar_url || "",
+            address: profileData.address || "",
+            city: profileData.city || "",
+            state: profileData.state || "",
+            country: profileData.country || "",
+            postal_code: profileData.postal_code || "",
+            bio: profileData.bio || ""
           })
         }
+
+        // Load user's stores by checking owner_id column
+        setStoresLoading(true)
+        const { data: storesData, error: storesError } = await supabase
+          .from("stores")
+          .select("*")
+          .eq("owner_id", user.id) // Changed from user_id to owner_id
+
+        if (storesError) throw storesError
+
+        setStores(storesData || [])
       } catch (error) {
-        console.error("Error loading profile:", error)
+        console.error("Error loading data:", error)
+        toast({
+          title: "Error loading data",
+          description: "Failed to load profile information",
+          variant: "destructive",
+        })
+      } finally {
+        setStoresLoading(false)
       }
     }
 
-    loadProfile()
-  }, [user, supabase])
+    loadData()
+  }, [user, supabase, toast])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -63,6 +101,12 @@ export default function ProfilePage() {
         .update({
           full_name: profileData.full_name,
           phone_number: profileData.phone_number,
+          address: profileData.address,
+          city: profileData.city,
+          state: profileData.state,
+          country: profileData.country,
+          postal_code: profileData.postal_code,
+          bio: profileData.bio,
           updated_at: new Date().toISOString(),
         })
         .eq("id", user.id)
@@ -84,7 +128,7 @@ export default function ProfilePage() {
     }
   }
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextareaElement>) {
     const { name, value } = e.target
     setProfileData((prev) => ({ ...prev, [name]: value }))
   }
@@ -141,16 +185,47 @@ export default function ProfilePage() {
                 <Input id="email" name="email" type="email" value={profileData.email} disabled />
                 <p className="text-xs text-gray-500">Email cannot be changed</p>
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone_number">Phone Number</Label>
+                <Input
+                  id="phone_number"
+                  name="phone_number"
+                  value={profileData.phone_number}
+                  onChange={handleChange}
+                  placeholder="e.g., 9876543210"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <Input id="address" name="address" value={profileData.address} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="city">City</Label>
+                <Input id="city" name="city" value={profileData.city} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">State/Province</Label>
+                <Input id="state" name="state" value={profileData.state} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="country">Country</Label>
+                <Input id="country" name="country" value={profileData.country} onChange={handleChange} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="postal_code">Postal Code</Label>
+                <Input id="postal_code" name="postal_code" value={profileData.postal_code} onChange={handleChange} />
+              </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone_number">Phone Number</Label>
-              <Input
-                id="phone_number"
-                name="phone_number"
-                value={profileData.phone_number}
+              <Label htmlFor="bio">Bio</Label>
+              <Textarea
+                id="bio"
+                name="bio"
+                value={profileData.bio}
                 onChange={handleChange}
-                placeholder="e.g., 9876543210"
+                placeholder="Tell us about yourself..."
+                rows={4}
               />
             </div>
 
@@ -167,6 +242,53 @@ export default function ProfilePage() {
               </Button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Your Stores Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Stores</CardTitle>
+          <CardDescription>Manage your business stores</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {storesLoading ? (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : stores.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {stores.map((store) => (
+                <Card
+                  key={store.id}
+                  className="transition-colors hover:bg-gray-50"
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center gap-2">
+                      <Store className="h-5 w-5 text-emerald-600" />
+                      <CardTitle className="text-lg">{store.name}</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-600">{store.description || "No description"}</p>
+                    <p className="mt-2 text-sm text-gray-500">
+                      {store.address ? `${store.address.substring(0, 30)}...` : "No address"}
+                    </p>
+                     <Link href={`/store/${store.slug}`} target="_blank" className="py-2 flex flex-row text-[14px] text-emerald-600">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                     View Store
+                     </Link>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center space-y-4 py-8">
+              <Store className="h-12 w-12 text-gray-400" />
+              <p className="text-gray-500">You don't have any stores yet</p>
+              <Button onClick={() => router.push("/stores/new")}>Create Your First Store</Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
