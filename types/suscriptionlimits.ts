@@ -14,3 +14,14 @@ export const subscriptionLimits = {
     storeLimit: 5,
   },
 }
+
+export interface LuckyCode {
+  id: string
+  code: string
+  is_used: boolean
+  plan_id: SubscriptionPlan
+  created_at: string
+  used_at: string | null
+  used_by: string | null
+  expires_at: string | null
+}

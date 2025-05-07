@@ -30,12 +30,10 @@ interface DashboardSidebarProps {
     name: string
     logo_url?: string | null
   } | null
-  productCount?: number
 }
 
 export default function DashboardSidebar({ 
-  store, 
-  productCount = 0,
+  store,
 }: DashboardSidebarProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -43,17 +41,14 @@ export default function DashboardSidebar({
   const [isHovered, setIsHovered] = useState(false)
   const [isPricingModalOpen, setPricingModalOpen] = useState(false)
   const [subscriptionPlan, setSubscriptionPlan] = useState<SubscriptionPlan>("free")
+  const [productCount, setProductCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const supabase = createClient()
 
   useEffect(() => {
-    // Check if the user came from the pricing page
-    if (searchParams.get("from") === "pricing") {
-      setPricingModalOpen(true)
-    }
+    let subscription: any = null;
 
-    // Fetch user's subscription plan
-    const fetchSubscriptionPlan = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true)
         const { data: { user } } = await supabase.auth.getUser()
@@ -63,26 +58,76 @@ export default function DashboardSidebar({
           return
         }
 
-        const { data: profile, error } = await supabase
+        // Fetch subscription plan
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('subscription_plan')
           .eq('id', user.id)
           .single()
 
-        if (error) throw error
+        if (profileError) throw profileError
 
         if (profile?.subscription_plan) {
           setSubscriptionPlan(profile.subscription_plan as SubscriptionPlan)
         }
+
+        // Fetch initial product count if store exists
+        if (store?.id) {
+          await fetchProductCount(store.id)
+
+          // Set up real-time subscription for products
+          subscription = supabase
+            .channel('products_changes')
+            .on(
+              'postgres_changes',
+              {
+                event: '*',
+                schema: 'public',
+                table: 'products',
+                filter: `store_id=eq.${store.id}`
+              },
+              async () => {
+                await fetchProductCount(store.id)
+              }
+            )
+            .subscribe()
+        }
       } catch (error) {
-        console.error('Error fetching subscription plan:', error)
+        console.error('Error fetching data:', error)
       } finally {
         setLoading(false)
       }
     }
 
-    fetchSubscriptionPlan()
-  }, [searchParams, supabase.auth])
+    const fetchProductCount = async (storeId: string) => {
+      try {
+        const { count, error } = await supabase
+          .from('products')
+          .select('*', { count: 'exact', head: true })
+          .eq('store_id', storeId)
+
+        if (error) throw error
+
+        setProductCount(count || 0)
+      } catch (error) {
+        console.error('Error fetching product count:', error)
+      }
+    }
+
+    // Check if the user came from the pricing page
+    if (searchParams.get("from") === "pricing") {
+      setPricingModalOpen(true)
+    }
+
+    fetchData()
+
+    // Clean up subscription on unmount
+    return () => {
+      if (subscription) {
+        supabase.removeChannel(subscription)
+      }
+    }
+  }, [searchParams, supabase, store?.id])
 
   const navItems = [
     {
@@ -119,7 +164,8 @@ export default function DashboardSidebar({
     100
   )
 
- 
+  const shouldShowUpgrade = ["free", "starter"].includes(subscriptionPlan)
+
   return (
     <>
       {/* Desktop Sidebar */}
@@ -231,42 +277,60 @@ export default function DashboardSidebar({
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-gray-500">YOUR PLAN</span>
-                <span className="text-xs font-medium text-emerald-600">
-                  {subscriptionPlan.charAt(0).toUpperCase() + subscriptionPlan.slice(1)}
-                </span>
-              </div>
-              <div className="w-full bg-gray-100 rounded-full h-2">
-                <div 
-                  className={cn(
-                    "h-2 rounded-full",
-                    usagePercentage >= 100 ? "bg-red-500" : "bg-emerald-500"
-                  )} 
-                  style={{ width: `${usagePercentage}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-           
-                {productCount}/{productLimit === Infinity ? "∞" : productLimit} products used
-                {usagePercentage >= 80 && (
-                  <span className="text-red-500 ml-1">
-                    {usagePercentage >= 100 ? " - Limit reached!" : " - Almost full!"}
+                {loading ? (
+                  <div className="h-4 w-20 bg-gray-200 rounded animate-pulse"></div>
+                ) : (
+                  <span className="text-xs font-medium text-emerald-600">
+                    {subscriptionPlan.charAt(0).toUpperCase() + subscriptionPlan.slice(1)}
                   </span>
                 )}
-              </p>
+              </div>
+              {loading ? (
+                <div className="w-full bg-gray-100 rounded-full h-2">
+                  <div className="h-2 rounded-full bg-gray-200 animate-pulse" style={{ width: '50%' }}></div>
+                </div>
+              ) : (
+                <>
+                  <div className="w-full bg-gray-100 rounded-full h-2">
+                    <div 
+                      className={cn(
+                        "h-2 rounded-full",
+                        usagePercentage >= 100 ? "bg-red-500" : "bg-emerald-500"
+                      )} 
+                      style={{ width: `${usagePercentage}%` }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {productCount}/{productLimit === Infinity ? "∞" : productLimit} products used
+                    {usagePercentage >= 80 && (
+                      <span className="text-red-500 ml-1">
+                        {usagePercentage >= 100 ? " - Limit reached!" : " - Almost full!"}
+                      </span>
+                    )}
+                  </p>
+                </>
+              )}
             </div>
 
-            {subscriptionPlan === "free" ? (
-              <Button
-                variant="outline"
-                className="w-full border-emerald-600 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
-              >
-                <PricingModal trigger={
-                  <div className="flex items-center gap-2">
-                    <Crown className="mr-2 h-4 w-4" />
-                    <span>Upgrade</span>
-                  </div>
-                } />
-              </Button>
+            {loading ? (
+              <div className="h-10 w-full bg-gray-200 rounded-lg animate-pulse"></div>
+            ) : shouldShowUpgrade ? (
+              <PricingModal 
+                isOpen={isPricingModalOpen}
+                currentPlan={subscriptionPlan} 
+                onClose={() => setPricingModalOpen(false)}
+                trigger={
+                  <Button
+                    variant="outline"
+                    className="w-full border-emerald-600 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Crown className="mr-2 h-4 w-4" />
+                      <span>Upgrade to {subscriptionPlan === "free" ? "Starter" : "Pro"}</span>
+                    </div>
+                  </Button>
+                }
+              />
             ) : (
               <div className="flex items-center justify-center gap-2 p-2 rounded-lg bg-emerald-50 text-emerald-600">
                 <Crown className="h-4 w-4" />
@@ -284,12 +348,18 @@ export default function DashboardSidebar({
                 className={cn(
                   "w-full bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm",
                   collapsed ? "p-2" : "",
-                  productCount >= productLimit ? "opacity-50 cursor-not-allowed" : ""
+                  (productCount >= productLimit || loading) ? "opacity-50 cursor-not-allowed" : ""
                 )}
-                disabled={productCount >= productLimit}
+                disabled={productCount >= productLimit || loading}
               >
-                <Plus className={cn(collapsed ? "mx-auto" : "mr-2", "h-5 w-5")} />
-                {!collapsed && "Add Product"}
+                {loading ? (
+                  <span className={cn(collapsed ? "mx-auto" : "")}>...</span>
+                ) : (
+                  <>
+                    <Plus className={cn(collapsed ? "mx-auto" : "mr-2", "h-5 w-5")} />
+                    {!collapsed && "Add Product"}
+                  </>
+                )}
               </Button>
             </Link>
           </div>
@@ -316,11 +386,6 @@ export default function DashboardSidebar({
           ))}
         </div>
       </nav>
-
-      <PricingModal
-        isOpen={isPricingModalOpen}
-        onClose={() => setPricingModalOpen(false)}
-      />
 
       <style jsx global>{`
         body {

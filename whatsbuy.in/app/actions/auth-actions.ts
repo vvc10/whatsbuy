@@ -36,7 +36,7 @@ export async function signUp({
       data: {
         full_name: name,
       },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://whatsbuy.vercel.app"}/auth/callback`,
     },
   })
 

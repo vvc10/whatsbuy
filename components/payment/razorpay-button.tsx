@@ -89,7 +89,16 @@ export default function RazorpayButton({
         },
       }
 
-      initializeRazorpayCheckout(options)
+      initializeRazorpayCheckout(options);
+
+      // Dynamically set z-index for Razorpay iframe
+      setTimeout(() => {
+        const razorpayFrame = document.querySelector('iframe.razorpay-checkout-frame');
+        if (razorpayFrame) {
+          razorpayFrame.style.zIndex = '9999';
+          razorpayFrame.style.position = 'relative';
+        }
+      }, 500); // Adjust timeout if needed
     } catch (error) {
       console.error("Payment failed:", error)
       toast({
