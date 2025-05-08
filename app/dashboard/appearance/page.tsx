@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -21,6 +20,7 @@ import StorePreview from "@/components/store/store-preview"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import StorePage from "@/app/store/[slug]/StoreClientComponent"
+import { Input } from "@/components/ui/input"
 
 const THEMES = [
   { id: "default", name: "Whatsbuy theme" },
@@ -38,7 +38,6 @@ const COLORS = [
 ]
 
 const HOMEPAGE_SECTIONS = [
- 
   // "Featured Products",
   // "New Arrivals",
   // "Testimonials",
@@ -46,6 +45,13 @@ const HOMEPAGE_SECTIONS = [
 ]
 
 const FOOTER_LINKS = ["About Us", "Contact", "Privacy Policy", "Terms of Service", "Shipping & Returns"]
+
+interface SocialLinks {
+  twitter?: string
+  youtube?: string
+  facebook?: string
+  instagram?: string
+}
 
 export default function AppearancePage() {
   const { toast } = useToast()
@@ -64,7 +70,7 @@ export default function AppearancePage() {
   const [categories, setCategories] = useState([])
   const [featuredProducts, setFeaturedProducts] = useState([])
   const [testimonials, setTestimonials] = useState([])
- 
+
   const supabase = createClient()
   const availableThemes = THEMES.filter((theme) => {
     if (subscriptionPlan === "pro") {
@@ -72,6 +78,7 @@ export default function AppearancePage() {
     }
     return theme.id === "default" || theme.id === "food" // Only show default and food for non-Pro
   })
+
   const [storeData, setStoreData] = useState({
     id: "",
     slug: "",
@@ -102,6 +109,12 @@ export default function AppearancePage() {
     premium_branding: false,
     whatsapp_number: "",
     description: "",
+    store_social_links: {
+      twitter: "",
+      youtube: "",
+      facebook: "",
+      instagram: ""
+    } as SocialLinks
   })
 
   // Fetch store products and other data
@@ -205,6 +218,12 @@ export default function AppearancePage() {
             premium_branding: data.premium_branding || false,
             whatsapp_number: data.whatsapp_number || "",
             description: data.description || "",
+            store_social_links: data.store_social_links || {
+              twitter: "",
+              youtube: "",
+              facebook: "",
+              instagram: ""
+            }
           })
         }
       } catch (error: any) {
@@ -260,14 +279,6 @@ export default function AppearancePage() {
     }, 1000)
     return () => clearTimeout(timer)
   }, [activeTab, storeData.theme, storeData.primary_color, storeData.show_banner, storeData.show_logo])
-
-  if (loading) {
-    return (
-      <>
-        <Loader />
-      </>
-    )
-  }
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: "logo" | "banner") => {
     const file = e.target.files?.[0]
@@ -358,6 +369,16 @@ export default function AppearancePage() {
     setPreviewLoading(true)
   }
 
+  const handleSocialLinkChange = (platform: keyof SocialLinks, value: string) => {
+    setStoreData(prev => ({
+      ...prev,
+      store_social_links: {
+        ...prev.store_social_links,
+        [platform]: value
+      }
+    }))
+  }
+
   const handleSave = async () => {
     if (!user || !storeData.id) return
 
@@ -379,6 +400,7 @@ export default function AppearancePage() {
           show_social_icons: storeData.show_social_icons,
           show_share_buttons: storeData.show_share_buttons,
           premium_branding: storeData.premium_branding,
+          store_social_links: storeData.store_social_links,
           updated_at: new Date().toISOString(),
         })
         .eq("id", storeData.id)
@@ -404,6 +426,14 @@ export default function AppearancePage() {
   const whatsappChatLink = storeData.whatsapp_number
     ? `https://wa.me/${storeData.whatsapp_number.replace(/\D/g, "")}`
     : null
+
+  if (loading) {
+    return (
+      <>
+        <Loader />
+      </>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -460,15 +490,13 @@ export default function AppearancePage() {
                     {THEMES.map((theme) => (
                       <div
                         key={theme.id}
-                        className={`relative overflow-hidden rounded-lg border transition-all ${
-                          storeData.theme === theme.id
+                        className={`relative overflow-hidden rounded-lg border transition-all ${storeData.theme === theme.id
                             ? "border-2 border-emerald-600 ring-2 ring-emerald-600/20"
                             : "border-gray-200"
-                        } ${
-                          (theme.id === "fashion" || theme.id === "tech") && subscriptionPlan !== "pro"
+                          } ${(theme.id === "fashion" || theme.id === "tech") && subscriptionPlan !== "pro"
                             ? "opacity-70"
                             : "hover:shadow-md cursor-pointer"
-                        }`}
+                          }`}
                       >
                         {/* Theme Preview */}
                         <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
@@ -536,8 +564,6 @@ export default function AppearancePage() {
                         )}
                       </div>
                     ))}
-                    
-                    
                   </div>
                   <div className="mt-4">More themes arriving soon</div>
                 </CardContent>
@@ -557,9 +583,8 @@ export default function AppearancePage() {
                       {COLORS.map((color) => (
                         <div
                           key={color.id}
-                          className={`relative h-10 w-10 cursor-pointer rounded-full ${
-                            storeData.primary_color === color.id ? "ring-2 ring-offset-2 ring-gray-950" : ""
-                          }`}
+                          className={`relative h-10 w-10 cursor-pointer rounded-full ${storeData.primary_color === color.id ? "ring-2 ring-offset-2 ring-gray-950" : ""
+                            }`}
                           style={{ backgroundColor: color.id }}
                           onClick={() => handleColorSelect(color.id)}
                           title={color.name}
@@ -683,8 +708,8 @@ export default function AppearancePage() {
                   <div className="space-y-2">
                     <Label>Homepage Sections</Label>
                     {subscriptionPlan !== "pro" && (
-                            <p className="text-xs text-gray-500">Upgrade to Pro to customize</p>
-                          )}
+                      <p className="text-xs text-gray-500">Upgrade to Pro to customize</p>
+                    )}
                     <div className="space-y-2">
                       {HOMEPAGE_SECTIONS.map((section) => {
                         const sectionKey = section.toLowerCase().replace(/\s+/g, "_")
@@ -695,7 +720,7 @@ export default function AppearancePage() {
                               checked={storeData.homepage_sections[sectionKey] !== false}
                               onCheckedChange={(checked) => handleSectionToggle(section, checked)}
                               disabled={subscriptionPlan !== "pro"}
-                           />
+                            />
                           </div>
                         )
                       })}
@@ -708,34 +733,79 @@ export default function AppearancePage() {
                           disabled={subscriptionPlan !== "pro"}
                         />
                       </div>
+                      <div className="flex items-center justify-between rounded-md border p-3">
+                        <div>
+                          <Label htmlFor="show_social_icons">Show social media icons</Label>
+                        </div>
+                        <Switch
+                          id="show_social_icons"
+                          checked={storeData.show_social_icons}
+                          onCheckedChange={(checked) => handleSwitchChange("show_social_icons", checked)}
+                        />
+                      </div>
+                      
+                      {/* Social Media Links Section */}
+                      {storeData.show_social_icons && (
+                        <div className="space-y-4 pt-4">
+                          <Label>Social Media Links</Label>
+                          <div className="space-y-3">
+                            <div className="flex flex-col gap-2">
+                              <Label htmlFor="twitter-url">Twitter</Label>
+                              <Input
+                                id="twitter-url"
+                                type="url"
+                                placeholder="https://twitter.com/yourstore"
+                                value={storeData.store_social_links.twitter || ""}
+                                onChange={(e) => handleSocialLinkChange("twitter", e.target.value)}
+                              />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              <Label htmlFor="youtube-url">YouTube</Label>
+                              <Input
+                                id="youtube-url"
+                                type="url"
+                                placeholder="https://youtube.com/yourstore"
+                                value={storeData.store_social_links.youtube || ""}
+                                onChange={(e) => handleSocialLinkChange("youtube", e.target.value)}
+                              />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              <Label htmlFor="facebook-url">Facebook</Label>
+                              <Input
+                                id="facebook-url"
+                                type="url"
+                                placeholder="https://facebook.com/yourstore"
+                                value={storeData.store_social_links.facebook || ""}
+                                onChange={(e) => handleSocialLinkChange("facebook", e.target.value)}
+                              />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              <Label htmlFor="instagram-url">Instagram</Label>
+                              <Input
+                                id="instagram-url"
+                                type="url"
+                                placeholder="https://instagram.com/yourstore"
+                                value={storeData.store_social_links.instagram || ""}
+                                onChange={(e) => handleSocialLinkChange("instagram", e.target.value)}
+                              />
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-500">
+                            These links will be displayed as social media icons in your store footer.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-                <Card>
+              <Card>
                 <CardHeader>
                   <CardTitle>Footer & Additional Elements</CardTitle>
                   <CardDescription>Configure footer and other store elements</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {/* <div className="space-y-2">
-                    <Label>Footer Links</Label>
-                    <div className="space-y-2">
-                      {FOOTER_LINKS.map((link) => {
-                        const linkKey = link.toLowerCase().replace(/\s+/g, "_")
-                        return (
-                          <div key={link} className="flex items-center justify-between rounded-md border p-3">
-                            <span>{link}</span>
-                            <Switch
-                              checked={storeData.footer_links[linkKey] !== false}
-                              onCheckedChange={(checked) => handleFooterLinkToggle(link, checked)}
-                            />
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div> */}
                   <div className="space-y-4 pt-4">
                     <Label>Branding Options</Label>
                     <div className="space-y-2">
@@ -753,25 +823,10 @@ export default function AppearancePage() {
                           disabled={subscriptionPlan !== "pro"}
                         />
                       </div>
-
-                      <div className="flex items-center justify-between rounded-md border p-3">
-                        <div>
-                          <Label htmlFor="show_social_icons">Show social media icons</Label>
-                          {subscriptionPlan !== "pro" && (
-                            <p className="text-xs text-gray-500">Upgrade to Pro to enable</p>
-                          )}
-                        </div>
-                        <Switch
-                          id="show_social_icons"
-                          checked={storeData.show_social_icons}
-                          onCheckedChange={(checked) => handleSwitchChange("show_social_icons", checked)}
-                          disabled={subscriptionPlan !== "pro"}
-                        />
-                      </div>
                     </div>
                   </div>
                 </CardContent>
-              </Card>  
+              </Card>
             </TabsContent>
           </Tabs>
         </div>
@@ -815,21 +870,7 @@ export default function AppearancePage() {
                 <div className="h-full overflow-auto">
                   <StorePage
                     store={storeData}
-                    products={
-                      products.length > 0
-                        ? products
-                        : [
-                            {
-                              id: 1,
-                              name: "Loading products...",
-                              price: 0,
-                              image: "/placeholder.svg",
-                              category: "Loading",
-                              description: "Please add products to your store.",
-                              rating: 5,
-                            },
-                          ]
-                    }
+                    products={products}
                     featuredProducts={featuredProducts}
                     categories={categories.length > 0 ? categories : ["Loading..."]}
                     testimonials={testimonials}

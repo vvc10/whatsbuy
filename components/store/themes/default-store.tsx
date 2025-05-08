@@ -7,7 +7,8 @@ import {
   Search, Music, Menu, X, ChevronDown, ShoppingBag,
   Instagram, Facebook, Twitter, Play, Disc, ArrowRight, ArrowLeft,
   Dot,
-  MoreHorizontal
+  MoreHorizontal,
+  Youtube
 } from "lucide-react"
 import Image from "next/image"
 
@@ -283,14 +284,14 @@ export default function DefaultStore({
               <Facebook className="h-6 w-6" />
             </Link>
           )}
-          {store.store_social_links.music && (
+          {store.store_social_links.youtube && (
             <Link
-              href={store.store_social_links.music}
+              href={store.store_social_links.youtube}
               target="_blank"
               rel="noopener noreferrer"
               className="text-white hover:text-amber-400 transition-colors"
             >
-              <Music className="h-6 w-6" />
+              <Youtube className="h-6 w-6" />
             </Link>
           )}
         </div>
@@ -593,35 +594,33 @@ export default function DefaultStore({
   const ProductGrid = () => (
     <div className="flex flex-col gap-6 mb-12">
       <h2 className="text-gray-200 text-[22px] font-[700]">All Products</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 flex-col gap-6">
-
-        {displayedProducts.map((product) => (
-          <motion.div
-            key={product.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-
-            {/* <ProductCard
-              product={product}
-              onAddToCart={() => addToCart(product)}
-              onQuickView={() => openQuickView(product)}
-            /> */}
-            <ProductCard
-              store={store}
-              product={product}
-              onAddToCart={() => addToCart(product)}
-              onQuickView={() => openQuickView(product)}
-              whatsappNumber={store.whatsapp_number}
-              storeName={store.name}
-            />
-          </motion.div>
-        ))}
-      </div>
+  
+      {displayedProducts.length === 0 ? (
+        <div className="text-center text-gray-400 py-10">No products yet.</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
+          {displayedProducts.map((product) => (
+            <motion.div
+              key={product.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ProductCard
+                store={store}
+                product={product}
+                onAddToCart={() => addToCart(product)}
+                onQuickView={() => openQuickView(product)}
+                whatsappNumber={store.whatsapp_number}
+                storeName={store.name}
+              />
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
-
   )
+  
 
   const TourDatesSection = () => (
     <section id="tour" className="mb-16">
@@ -766,28 +765,28 @@ export default function DefaultStore({
 
       {/* Cart Drawer */}
       <CartDrawer
-  isOpen={isCartOpen}
-  onClose={() => setIsCartOpen(false)}
-  cartItems={cartItems}
-  setCartItems={setCartItems}
-  darkMode={true}
-  whatsappNumber={store.whatsapp_number}  
-  storeName={store.name} 
-/>
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        cartItems={cartItems}
+        setCartItems={setCartItems}
+        darkMode={true}
+        whatsappNumber={store.whatsapp_number}
+        storeName={store.name}
+      />
 
       {/* Quick View Modal */}
       {quickViewProduct && (
-    
+
 
         <QuickViewModal
-        store={store}
-        product={quickViewProduct}
-        isOpen={!!quickViewProduct}
-        onClose={() => setQuickViewProduct(null)}
-        onAddToCart={() => addToCart(quickViewProduct)}
-        darkMode={true} // Set based on your theme
-        primaryColor={primaryColor} // Your brand color from Supabase
-      />
+          store={store}
+          product={quickViewProduct}
+          isOpen={!!quickViewProduct}
+          onClose={() => setQuickViewProduct(null)}
+          onAddToCart={() => addToCart(quickViewProduct)}
+          darkMode={true} // Set based on your theme
+          primaryColor={primaryColor} // Your brand color from Supabase
+        />
       )}
     </div>
   )
